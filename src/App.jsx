@@ -1,27 +1,25 @@
-import React, { useState, useEffect } from "react";
+import { Toaster } from "@/components/ui/sonner";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
 import {
+  Navigate,
+  Route,
   BrowserRouter as Router,
   Routes,
-  Route,
-  Navigate,
 } from "react-router-dom";
-import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-// Import Bootstrap CSS
-import "bootstrap/dist/css/bootstrap.min.css";
-
+import { toast } from "react-toastify";
 // Components
-import Navbar from "./components/layout/Navbar";
-import Register from "./components/auth/Register";
-import Login from "./components/auth/Login";
-import Dashboard from "./components/dashboard/Dashboard";
-import FileUpload from "./components/files/FileUpload";
-import ProtectedRoute from "./components/routing/ProtectedRoute";
-import FileList from "./components/files/FileList";
-import TransferInitiate from "./components/dashboard/TransferInitiate";
-import TransferDetails from "./components/dashboard/TransferDetail";
-// import Profile from "./components/profile/Profile";
+import Login from "./compos/auth/Login";
+import Register from "./compos/auth/Register";
+import Dashboard from "./compos/dashboard/Dashboard";
+import P2pTransfer from "./compos/dashboard/P2pTransfer";
+import TransferDetails from "./compos/dashboard/TransferDetail";
+import TransferInitiate from "./compos/dashboard/TransferInitiate";
+import FileList from "./compos/files/FileList";
+import FileUpload from "./compos/files/FileUpload";
+import Navbar from "./compos/layout/Navbar";
+import ProtectedRoute from "./compos/routing/ProtectedRoute";
+// import Profile from "./compos/profile/Profile";
 
 // Set default axios config
 axios.defaults.baseURL =
@@ -32,7 +30,6 @@ const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem("token"));
-
   // Set auth token
   if (token) {
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -67,7 +64,11 @@ const App = () => {
     setToken(receivedToken);
     setUser(userInfo);
     setIsAuthenticated(true);
-    toast.success("Login successful");
+    toast({
+      title: "Success",
+      description: "Login successful",
+      variant: "default",
+    });
   };
 
   const logout = () => {
@@ -76,53 +77,61 @@ const App = () => {
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
-    toast.info("Logged out successfully");
+    toast({
+      title: "Info",
+      description: "Logged out successfully",
+      variant: "default",
+    });
   };
 
   if (loading) {
-    return <div className='loading-container'>Loading...</div>;
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="text-lg font-medium">Loading...</div>
+      </div>
+    );
   }
 
   return (
     <Router>
-      <div className='app'>
+      <div className="flex min-h-screen flex-col">
         <Navbar isAuthenticated={isAuthenticated} user={user} logout={logout} />
-        <main className='container mt-4'>
-          <ToastContainer position='top-right' autoClose={3000} />
+        <main className="container mx-auto mt-4 flex-1 px-4">
+          <Toaster />
           <Routes>
             <Route
-              path='/'
+              path="/"
               element={
                 isAuthenticated ? (
-                  <Navigate to='/dashboard' />
+                  <Navigate to="/dashboard" />
                 ) : (
-                  <Navigate to='/login' />
+                  <Navigate to="/login" />
                 )
               }
             />
             <Route
-              path='/register'
+              path="/register"
               element={
                 !isAuthenticated ? (
                   <Register login={login} />
                 ) : (
-                  <Navigate to='/dashboard' />
+                  <Navigate to="/dashboard" />
                 )
               }
             />
             <Route
-              path='/login'
+              path="/login"
               element={
                 !isAuthenticated ? (
                   <Login login={login} />
                 ) : (
-                  <Navigate to='/dashboard' />
+                  <Navigate to="/dashboard" />
                 )
               }
             />
 
             <Route
-              path='/dashboard'
+              path="/dashboard"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
                   <Dashboard user={user} />
@@ -131,7 +140,7 @@ const App = () => {
             />
 
             <Route
-              path='/upload'
+              path="/upload"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
                   <FileUpload user={user} />
@@ -140,7 +149,7 @@ const App = () => {
             />
 
             <Route
-              path='/files'
+              path="/files"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
                   <FileList user={user} />
@@ -149,7 +158,7 @@ const App = () => {
             />
 
             <Route
-              path='/transfer/initiate'
+              path="/transfer/initiate"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
                   <TransferInitiate user={user} />
@@ -157,26 +166,24 @@ const App = () => {
               }
             />
 
-            {/* <Route
-              path='/transfer/:transferId'
-              element={
-                <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <TransferDetailsPage user={user} />
-                </ProtectedRoute>
-              }
-            /> */}
-
             <Route
-              path='/transfer/:transferId'
+              path="/transfer/:transferId"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
                   <TransferDetails user={user} />
                 </ProtectedRoute>
               }
             />
-
+            <Route
+              path="/p2p-transfer"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <P2pTransfer user={user} />
+                </ProtectedRoute>
+              }
+            />
             {/* <Route
-              path='/profile'
+              path="/profile"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
                   <Profile user={user} />

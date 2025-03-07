@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import io from "socket.io-client";
 import Receiver from "./Receiver";
 import Sender from "./Sender";
+
+// Import shadcn components
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 const TransferDetails = ({ user }) => {
   const { transferId } = useParams();
@@ -45,8 +52,7 @@ const TransferDetails = ({ user }) => {
             (!isSender && data.role === "sender")
           ) {
             toast.info(
-              `${
-                data.role === "sender" ? "Sender" : "Receiver"
+              `${data.role === "sender" ? "Sender" : "Receiver"
               } is ready for connection`
             );
             setPeerConnected(true);
@@ -173,11 +179,23 @@ const TransferDetails = ({ user }) => {
   };
 
   if (loading) {
-    return <div className='text-center mt-5'>Loading transfer details...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+        <span className="text-lg">Loading transfer details...</span>
+      </div>
+    );
   }
 
   if (!transfer) {
-    return <div className='text-center mt-5'>Transfer not found</div>;
+    return (
+      <Alert variant="destructive" className="max-w-md mx-auto mt-8">
+        <AlertTitle>Not Found</AlertTitle>
+        <AlertDescription>
+          The requested transfer could not be found.
+        </AlertDescription>
+      </Alert>
+    );
   }
 
   // Format file size for display (common utility function)
@@ -205,62 +223,98 @@ const TransferDetails = ({ user }) => {
   const renderAcceptanceUI = () => {
     if (!isSender && transfer.status === "PENDING") {
       return (
-        <div className='alert alert-info mb-3'>
-          <h5>File Transfer Request</h5>
-          <p>
-            {transfer.uploadedBy?.email} wants to send you a file:
-            <br />
-            <strong>{transfer.fileName}</strong> (
-            {formatFileSize(transfer.fileSize)})
-          </p>
-          <button
-            className='btn btn-success me-2'
-            onClick={handleAcceptTransfer}
-          >
-            Accept Transfer
-          </button>
-
-          <button className='btn btn-danger' onClick={handleCancelTransfer}>
-            Decline
-          </button>
-        </div>
+        <Alert className="mb-6">
+          <AlertTitle className="text-lg font-semibold">File Transfer Request</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 mb-4">
+              <p>
+                {transfer.uploadedBy?.email} wants to send you a file:
+                <br />
+                <span className="font-medium">{transfer.fileName}</span> (
+                {formatFileSize(transfer.fileSize)})
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="default"
+                onClick={handleAcceptTransfer}
+              >
+                Accept Transfer
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleCancelTransfer}
+              >
+                Decline
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       );
     }
     return null;
   };
 
   return (
-    <div className='transfer-details'>
-      <h2 className='mb-4'>File Transfer</h2>
-
-      <div className='card mb-4'>
-        <div className='card-body'>
-          <h5 className='card-title'>
-            {isSender ? "Sending to:" : "Receiving from:"}
-          </h5>
-          <p className='card-text'>
-            {isSender ? transfer.recipient?.email : transfer.uploadedBy?.email}
-          </p>
-          <h5 className='mt-3'>File Information</h5>
-          <p className='card-text'>
-            <strong>Name:</strong> {transfer.fileName}
-            <br />
-            <strong>Size:</strong> {formatFileSize(transfer.fileSize)}
-            <br />
-            <strong>Type:</strong> {transfer.fileType}
-          </p>
-
-          {/* Acceptance UI - Only visible to recipients for pending transfers */}
-          {renderAcceptanceUI()}
-
-          {/* Only render sender/receiver components when appropriate */}
-          {isSender ? (
-            <Sender {...commonProps} />
-          ) : (
-            transfer.status !== "PENDING" && <Receiver {...commonProps} />
-          )}
-        </div>
+    <div className="container mx-auto py-6 px-4">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold">File Transfer</h2>
+        <Badge
+          variant={
+            transfer.status === "PENDING"
+              ? "outline"
+              : transfer.status === "ACCEPTED"
+                ? "secondary"
+                : transfer.status === "COMPLETED"
+                  ? "default"
+                  : "destructive"
+          }
+          className="text-sm"
+        >
+          {transfer.status}
+        </Badge>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Transfer Details</CardTitle>
+          <CardDescription>
+            {isSender ? "Sending to:" : "Receiving from:"}{" "}
+            <span className="font-medium">
+              {isSender ? transfer.recipient?.email : transfer.uploadedBy?.email}
+            </span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium mb-2">File Information</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-sm text-muted-foreground">Name:</div>
+                <div className="text-sm font-medium">{transfer.fileName}</div>
+
+                <div className="text-sm text-muted-foreground">Size:</div>
+                <div className="text-sm font-medium">{formatFileSize(transfer.fileSize)}</div>
+
+                <div className="text-sm text-muted-foreground">Type:</div>
+                <div className="text-sm font-medium">{transfer.fileType}</div>
+              </div>
+            </div>
+
+            {/* Acceptance UI */}
+            {renderAcceptanceUI()}
+
+            {/* Transfer components */}
+            <div className="pt-2">
+              {isSender ? (
+                <Sender {...commonProps} />
+              ) : (
+                transfer.status !== "PENDING" && <Receiver {...commonProps} />
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
